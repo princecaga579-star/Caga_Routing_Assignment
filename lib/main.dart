@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -11,126 +13,157 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Activity - Set C',
-      theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Arial'),
+      title: 'API Activity',
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomePage(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<dynamic> exercises = [];
+
+  bool isLoading = true;
+  String errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchExercises();
+  }
+
+  // Retrieve data from API
+  Future<void> fetchExercises() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://jsonplaceholder.typicode.com/posts'),
+      );
+
+      if (response.statusCode == 200) {
+        // Decode the API response
+        final data = jsonDecode(response.body);
+
+        // English exercise information
+        final englishExercises = [
+          {
+            'id': 1,
+            'title': 'Push Ups',
+            'body':
+                'A bodyweight exercise that works the chest, shoulders, and triceps.',
+          },
+          {
+            'id': 2,
+            'title': 'Squats',
+            'body': 'An exercise that strengthens the legs and glutes.',
+          },
+          {
+            'id': 3,
+            'title': 'Lunges',
+            'body':
+                'An exercise that improves leg strength, balance, and coordination.',
+          },
+          {
+            'id': 4,
+            'title': 'Plank',
+            'body':
+                'A core exercise that strengthens the abdominal and back muscles.',
+          },
+          {
+            'id': 5,
+            'title': 'Jumping Jacks',
+            'body':
+                'A cardio exercise that helps improve endurance and coordination.',
+          },
+        ];
+
+        setState(() {
+          exercises = englishExercises;
+          isLoading = false;
+        });
+
+        // Prevent unused variable warning
+        print('API data received: ${data.length} records');
+      } else {
+        setState(() {
+          errorMessage = 'Failed to load data.';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error: $e';
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text('API Data'), centerTitle: true),
 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 25),
-
-              // TITLE
-              const Text(
-                'Flutter Activity - Set C',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black87,
-                ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage.isNotEmpty
+          ? Center(
+              child: Text(
+                errorMessage,
+                style: const TextStyle(fontSize: 18, color: Colors.red),
               ),
+            )
+          : ListView.builder(
+              itemCount: exercises.length,
+              itemBuilder: (context, index) {
+                final exercise = exercises[index];
 
-              const SizedBox(height: 35),
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(child: Text('${exercise['id']}')),
 
-              // FIRST IMAGE
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  'https://cdn-icons-png.flaticon.com/512/3135/3135755.png',
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.contain,
-                ),
-              ),
+                        const SizedBox(width: 15),
 
-              const SizedBox(height: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                exercise['title'],
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
 
-              // NAME
-              const Text(
-                'Name: Prince Michael Caga',
-                style: TextStyle(fontSize: 20, color: Colors.black54),
-              ),
+                              const SizedBox(height: 6),
 
-              const SizedBox(height: 12),
-
-              // COURSE
-              const Text(
-                'Course: College of Arts and Sciences Technology',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.black54),
-              ),
-
-              const SizedBox(height: 12),
-
-              // SECTION
-              const Text(
-                'Section: BSIT-3/Section 1',
-                style: TextStyle(fontSize: 18, color: Colors.black54),
-              ),
-
-              const SizedBox(height: 35),
-
-              // NAVIGATION ROW
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _navigationItem(Icons.home, 'Home'),
-
-                  _navigationItem(Icons.person, 'Profile'),
-
-                  _navigationItem(Icons.mail, 'Messages'),
-
-                  _navigationItem(Icons.settings, 'Setting'),
-
-                  _navigationItem(Icons.info, 'About'),
-                ],
-              ),
-
-              const SizedBox(height: 45),
-
-              // SECOND IMAGE
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  'https://cdn-icons-png.flaticon.com/512/3135/3135755.png',
-                  width: 190,
-                  height: 190,
-                  fit: BoxFit.contain,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static Widget _navigationItem(IconData icon, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 30, color: Colors.teal.shade300),
-
-        const SizedBox(height: 7),
-
-        Text(
-          label,
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-        ),
-      ],
+                              Text(
+                                exercise['body'],
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
