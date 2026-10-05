@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -13,157 +11,123 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'API Activity',
+      title: 'Student App',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomePage(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
+// Home Page
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  List<dynamic> exercises = [];
-
-  bool isLoading = true;
-  String errorMessage = '';
-
-  @override
-  void initState() {
-    super.initState();
-    fetchExercises();
-  }
-
-  // Retrieve data from API
-  Future<void> fetchExercises() async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://jsonplaceholder.typicode.com/posts'),
-      );
-
-      if (response.statusCode == 200) {
-        // Decode the API response
-        final data = jsonDecode(response.body);
-
-        // English exercise information
-        final englishExercises = [
-          {
-            'id': 1,
-            'title': 'Push Ups',
-            'body':
-                'A bodyweight exercise that works the chest, shoulders, and triceps.',
-          },
-          {
-            'id': 2,
-            'title': 'Squats',
-            'body': 'An exercise that strengthens the legs and glutes.',
-          },
-          {
-            'id': 3,
-            'title': 'Lunges',
-            'body':
-                'An exercise that improves leg strength, balance, and coordination.',
-          },
-          {
-            'id': 4,
-            'title': 'Plank',
-            'body':
-                'A core exercise that strengthens the abdominal and back muscles.',
-          },
-          {
-            'id': 5,
-            'title': 'Jumping Jacks',
-            'body':
-                'A cardio exercise that helps improve endurance and coordination.',
-          },
-        ];
-
-        setState(() {
-          exercises = englishExercises;
-          isLoading = false;
-        });
-
-        // Prevent unused variable warning
-        print('API data received: ${data.length} records');
-      } else {
-        setState(() {
-          errorMessage = 'Failed to load data.';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Error: $e';
-        isLoading = false;
-      });
-    }
-  }
+  final List<Map<String, dynamic>> students = const [
+    {'name': 'Prince Caga', 'course': 'BSIT', 'age': 20},
+    {'name': 'Jane Smith', 'course': 'BSCS', 'age': 22},
+    {'name': 'John Doe', 'course': 'BSBA', 'age': 25},
+    {'name': 'Emily Davis', 'course': 'BSN', 'age': 28},
+    {'name': 'Michael Brown', 'course': 'BSEd', 'age': 30},
+    {'name': 'Albert Johnson', 'course': 'BSCE', 'age': 34},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('API Data'), centerTitle: true),
+      appBar: AppBar(title: const Text('Students')),
+      body: ListView.builder(
+        itemCount: students.length,
+        itemBuilder: (context, index) {
+          final student = students[index];
 
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-          ? Center(
-              child: Text(
-                errorMessage,
-                style: const TextStyle(fontSize: 18, color: Colors.red),
-              ),
-            )
-          : ListView.builder(
-              itemCount: exercises.length,
-              itemBuilder: (context, index) {
-                final exercise = exercises[index];
+          return Card(
+            margin: const EdgeInsets.all(10),
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.person)),
+              title: Text(student['name']),
+              subtitle: Text('${student['course']} - Age: ${student['age']}'),
+              trailing: const Icon(Icons.arrow_forward_ios),
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(child: Text('${exercise['id']}')),
-
-                        const SizedBox(width: 15),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                exercise['title'],
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              const SizedBox(height: 6),
-
-                              Text(
-                                exercise['body'],
-                                style: const TextStyle(fontSize: 15),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+              // ROUTING
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentDetailsPage(
+                      name: student['name'],
+                      course: student['course'],
+                      age: student['age'],
                     ),
                   ),
                 );
               },
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// Student Details Page
+class StudentDetailsPage extends StatelessWidget {
+  final String name;
+  final String course;
+  final int age;
+
+  const StudentDetailsPage({
+    super.key,
+    required this.name,
+    required this.course,
+    required this.age,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Student Details')),
+      body: Center(
+        child: Card(
+          margin: const EdgeInsets.all(20),
+          child: Padding(
+            padding: const EdgeInsets.all(25),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircleAvatar(
+                  radius: 45,
+                  child: Icon(Icons.person, size: 50),
+                ),
+
+                const SizedBox(height: 20),
+
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Text('Course: $course', style: const TextStyle(fontSize: 18)),
+
+                Text('Age: $age', style: const TextStyle(fontSize: 18)),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
