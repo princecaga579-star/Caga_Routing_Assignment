@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -19,52 +21,113 @@ class MyApp extends StatelessWidget {
 }
 
 // Home Page
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  final List<Map<String, dynamic>> students = const [
-    {'name': 'Prince Caga', 'course': 'BSIT', 'age': 20},
-    {'name': 'Jane Smith', 'course': 'BSCS', 'age': 22},
-    {'name': 'John Doe', 'course': 'BSBA', 'age': 25},
-    {'name': 'Emily Davis', 'course': 'BSN', 'age': 28},
-    {'name': 'Michael Brown', 'course': 'BSEd', 'age': 30},
-    {'name': 'Albert Johnson', 'course': 'BSCE', 'age': 34},
-  ];
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<dynamic> students = [];
+  bool isLoading = true;
+
+  // Fetch students from API
+  Future<void> fetchStudents() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://jsonplaceholder.typicode.com/users'),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          students = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load students');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  // Delete student from the list
+  void deleteStudent(int index) {
+    setState(() {
+      students.removeAt(index);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchStudents();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Students')),
-      body: ListView.builder(
-        itemCount: students.length,
-        itemBuilder: (context, index) {
-          final student = students[index];
 
-          return Card(
-            margin: const EdgeInsets.all(10),
-            child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: Text(student['name']),
-              subtitle: Text('${student['course']} - Age: ${student['age']}'),
-              trailing: const Icon(Icons.arrow_forward_ios),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : students.isEmpty
+          ? const Center(child: Text('No students to display'))
+          : ListView.builder(
+              itemCount: students.length,
 
-              // ROUTING
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StudentDetailsPage(
-                      name: student['name'],
-                      course: student['course'],
-                      age: student['age'],
+              itemBuilder: (context, index) {
+                final student = students[index];
+
+                return Card(
+                  margin: const EdgeInsets.all(10),
+
+                  child: ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.person)),
+
+                    title: Text(
+                      student['name'],
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
+
+                    subtitle: Text('Email: ${student['email']}'),
+
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+
+                      onPressed: () {
+                        deleteStudent(index);
+                      },
+                    ),
+
+                    // ROUTING
+                    onTap: () {
+                      Navigator.push(
+                        context,
+
+                        MaterialPageRoute(
+                          builder: (context) => StudentDetailsPage(
+                            name: student['name'],
+                            email: student['email'],
+                            username: student['username'],
+                            phone: student['phone'],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
             ),
-          );
-        },
-      ),
     );
   }
 }
@@ -72,27 +135,33 @@ class HomePage extends StatelessWidget {
 // Student Details Page
 class StudentDetailsPage extends StatelessWidget {
   final String name;
-  final String course;
-  final int age;
+  final String email;
+  final String username;
+  final String phone;
 
   const StudentDetailsPage({
     super.key,
     required this.name,
-    required this.course,
-    required this.age,
+    required this.email,
+    required this.username,
+    required this.phone,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Student Details')),
+
       body: Center(
         child: Card(
           margin: const EdgeInsets.all(20),
+
           child: Padding(
             padding: const EdgeInsets.all(25),
+
             child: Column(
               mainAxisSize: MainAxisSize.min,
+
               children: [
                 const CircleAvatar(
                   radius: 45,
@@ -103,24 +172,40 @@ class StudentDetailsPage extends StatelessWidget {
 
                 Text(
                   name,
+                  textAlign: TextAlign.center,
+
                   style: const TextStyle(
                     fontSize: 25,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
 
-                Text('Course: $course', style: const TextStyle(fontSize: 18)),
+                Text(
+                  'Username: $username',
+                  style: const TextStyle(fontSize: 18),
+                ),
 
-                Text('Age: $age', style: const TextStyle(fontSize: 18)),
+                const SizedBox(height: 8),
 
-                const SizedBox(height: 20),
+                Text(
+                  'Email: $email',
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                Text('Phone: $phone', style: const TextStyle(fontSize: 18)),
+
+                const SizedBox(height: 25),
 
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
+
                   child: const Text('Back'),
                 ),
               ],
